@@ -99,7 +99,7 @@ All options of this recipe are just proxies for [already existing JUCE CMake Bui
 - `build_extras` corresponds to [`JUCE_BUILD_EXTRAS`](https://github.com/juce-framework/JUCE/blob/master/docs/CMake%20API.md#juce_build_extras)
 - `build_examples` corresponds to [`JUCE_BUILD_EXAMPLES`](https://github.com/juce-framework/JUCE/blob/master/docs/CMake%20API.md#juce_build_examples)
 - `enable_module_source_groups` corresponds to [`JUCE_BUILD_EXAMPLES`](https://github.com/juce-framework/JUCE/blob/master/docs/CMake%20API.md#juce_build_examples)
-- `copy_plugin_after_build` corresponds to [`JUCE_COPY_PLUGIN_AFTER_BUILD`
+- `copy_plugin_after_build` corresponds to [`JUCE_COPY_PLUGIN_AFTER_BUILD`](https://github.com/juce-framework/JUCE/blob/master/docs/CMake%20API.md#juce_copy_plugin_after_build)
 
 All defaults follow the same rules as in JUCE. For example, if you haven't provided `build_extras` then Conan will set it to `False`, just as JUCE does.
 
