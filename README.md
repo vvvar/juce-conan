@@ -1,0 +1,140 @@
+# JUCE 7 Unofficial Conan 2.0 Recipe
+
+This repository contains a recipe that makes [JUCE 7](https://juce.com) available as [Conan 2.0](https://docs.conan.io/2/) Package.
+
+## Pre-requisites
+
+Install:
+- [Conan 2.0.2+](https://docs.conan.io/2/installation.html)
+
+Read:
+- [Conan 2.0 Getting Started](https://docs.conan.io/2/tutorial/consuming_packages.html)
+- [JUCE Cmake Documentation](https://github.com/juce-framework/JUCE/blob/master/docs/CMake%20API.md)
+
+## How to use
+
+Create Conan Package in the local repository:
+```sh
+$ conan create .
+```
+
+Additionally, you can configure it with options:
+```sh
+$ conan create . --options build_extras=True
+```
+
+All options of this recipe are just proxies for [already existing JUCE CMake Build Options](https://github.com/juce-framework/JUCE/blob/master/docs/CMake%20API.md#options):
+- `build_extras` corresponds to [`JUCE_BUILD_EXTRAS`](https://github.com/juce-framework/JUCE/blob/master/docs/CMake%20API.md#juce_build_extras)
+- `build_examples` corresponds to [`JUCE_BUILD_EXAMPLES`](https://github.com/juce-framework/JUCE/blob/master/docs/CMake%20API.md#juce_build_examples)
+- `enable_module_source_groups` corresponds to [`JUCE_BUILD_EXAMPLES`](https://github.com/juce-framework/JUCE/blob/master/docs/CMake%20API.md#juce_build_examples)
+- `copy_plugin_after_build` corresponds to [`JUCE_COPY_PLUGIN_AFTER_BUILD`](https://github.com/juce-framework/JUCE/blob/master/docs/CMake%20API.md#juce_copy_plugin_after_build)
+
+
+Then, you can consume it in your Conan project. Here is a simple example of `conanfile.py`:
+```python
+from conan import ConanFile
+from conan.tools.cmake import CMakeToolchain, CMakeDeps, CMake, cmake_layout
+
+class MyProject(ConanFile):
+    name = "MyPlugin"
+    version = "0.4.2"
+    user = "octocat"
+    channel = "testing"
+    settings = "os", "arch", "compiler", "build_type"
+
+    requires = "juce/7.0.5@juce/release" # Require JUCE
+    default_options = {                  # Configure it
+        "juce/*:build_extras": True      # JUCE_BUILD_EXTRAS=ON
+    }
+
+    def layout(self):
+        cmake_layout(self)
+
+    def generate(self): 
+        toolchain = CMakeToolchain(self)
+        toolchain.generate()
+        dependencies = CMakeDeps(self)
+        dependencies.generate()
+
+    def build(self):
+        cmake = CMake(self)
+        cmake.configure()
+        cmake.build()
+```
+
+After this, you can use it as you're usually using JUCE with CMake. Similar to the [find package approach](https://github.com/juce-framework/JUCE/blob/master/docs/CMake%20API.md#using-find_package):
+```cmake
+# CMakeList.txt
+project(MyPlugin)
+
+# Place it early, after `project()`
+find_package(JUCE CONFIG REQUIRED)
+
+# You can use standard JUCE CMake functions
+juce_add_plugin(MyPlugin
+    PLUGIN_MANUFACTURER_CODE Ocat
+    PLUGIN_CODE Ocode
+    LV2URI "https://example.com"
+    FORMATS AU VST3 LV2 Standalone
+    VST3_CATEGORIES Fx Distortion Dynamics
+    AU_MAIN_TYPE kAudioUnitType_Effect
+    COMPANY_NAME "octocompany"
+    PRODUCT_NAME "MyPlugin"
+
+# Just as normal JUCE CMake project
+target_sources(MyPlugin
+    PRIVATE
+    Source/PluginEditor.cpp
+    Source/PluginProcessor.cpp)
+
+# And link with JUCE libraries
+target_link_libraries(MyPlugin
+    PRIVATE
+    juce::juce_dsp
+    juce::juce_audio_utils
+    juce::juce_audio_plugin_client
+    PUBLIC
+    juce::juce_recommended_config_flags
+    juce::juce_recommended_lto_flags
+    juce::juce_recommended_warning_flags)
+```
+
+Then, you can build your project as a normal Conan project:
+```sh
+$ conan install . && conan build .
+```
+
+> **Warning** 
+> If you're receiving this error:
+> ```sh
+> ERROR: Missing prebuilt package for 'juce/7.0.5@juce/release'
+> ```
+> then it means that you haven't build JUCE Conan Package with correct options/settings(for ex. you've build it with `build_extras=False` but in your project it is required with `build_extras=True`). JUCE Conan Package's settings/options in your cache and in your requirment should 1-1 match(see [detailed explanation from Conan Docs](https://docs.conan.io/2/knowledge/faq.html?highlight=settings#error-missing-prebuilt-package)).
+> Therefore, you should either create JUCE Conan Package with correct options/settings or in your project explicitly state that you'd like to build JUCE from sources:
+> ```sh
+> $ conan install . --build=missing && conan build .
+> ``` 
+
+
+## Versioning
+This recipe follows the same versioning scheme as JUCE. This means that `7.0.5` version of this recipe corresponds to [`7.0.5 version of JUCE`](https://github.com/juce-framework/JUCE/releases/tag/7.0.5).
+
+## How does it work
+1. Get the tagged version of JUCE that matches with version of this recipe
+2. Translate Conan Options into [JUCE CMake Options](https://github.com/juce-framework/JUCE/blob/master/docs/CMake%20API.md#options)
+3. Disable Conan's `XXXConfig.cmake` generation feature and force it to use the original `JUCEConfig.cmake` generated by JUCE
+3. Build it and store it in the cache
+
+## Tips
+
+### Choose CMake Generator
+
+By default, Conan will ask CMake to use `Unix Makefiles` generator. You can change that by configuring `CMakeToolchain` in your `conanfile.py`. For example, if you want to use `Visual Studio 17 2022` for Windows and `Ninja` for everything else, then you need to modify your `def generate(self)`:` as follows: 
+```python
+    def generate(self): 
+        toolchain = CMakeToolchain(self)
+        if self.settings.os == "Windows":
+            toolchain.generator = "Visual Studio 17 2022"
+        else:
+            toolchain.generator = "Ninja"
+```
