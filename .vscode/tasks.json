@@ -1,0 +1,11 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+      {
+        "label": "Create Package",
+        "command": "conan create .",
+        "type": "shell",
+        "problemMatcher": "$gcc"
+      }
+    ]
+  }
