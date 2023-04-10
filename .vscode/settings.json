@@ -1,4 +1,18 @@
 {
     "python.analysis.extraPaths": ["/usr/local/Cellar/conan/2.0.2/libexec/lib/python3.11/site-packages"],
-    "grammarly.files.include": ["**/README.md", "**/readme.md"]
+    "grammarly.files.include": [
+        "**/README.md",
+        "**/readme.md"
+    ],
+    "cSpell.words": [
+        "audiounit",
+        "browsable",
+        "builddirs",
+        "buildenv",
+        "cmkae",
+        "JUCE",
+        "juceaide",
+        "Projucer",
+        "RTAS"
+    ]
 }
